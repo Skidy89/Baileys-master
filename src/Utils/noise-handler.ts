@@ -117,7 +117,8 @@ export const makeNoiseHandler = ({
 	}
 
 	const localHKDF = (data: Uint8Array): [Uint8Array, Uint8Array] => {
-		const key = hkdf(Buffer.from(data), 64, { salt, info: '' })
+		const bf = salt as Buffer
+		const key = hkdf(Buffer.from(data), 64, { salt: bf, info: '' })
 		return [key.subarray(0, 32), key.subarray(32)]
 	}
 

@@ -185,8 +185,7 @@ export const encodeSyncdPatch = async (
 	const encoded = proto.SyncActionData.encode(dataProto).finish()
 
 	const keyValue = mutationKeys(key.keyData!)
-
-	const encValue = aesEncrypt(encoded, keyValue.valueEncryptionKey)
+	const encValue = aesEncrypt(encoded, keyValue.valueEncryptionKey as Buffer)
 	const valueMac = generateMac(operation, encValue, encKeyId, keyValue.valueMacKey)
 	const indexMac = hmacSign(indexBuffer, keyValue.indexKey)
 
@@ -269,7 +268,7 @@ export const decodeSyncdMutations = async (
 
 		let result: Uint8Array
 		try {
-			result = aesDecrypt(encContent, key.valueEncryptionKey)
+			result = aesDecrypt(encContent as Buffer, key.valueEncryptionKey as Buffer)
 		} catch {
 			// decrypt failed — skip this record instead of aborting
 			continue
