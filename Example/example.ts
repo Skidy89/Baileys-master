@@ -1,7 +1,7 @@
 import { Boom } from '@hapi/boom'
 import NodeCache from '@cacheable/node-cache'
 import readline from 'readline'
-import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageIDV2, getAggregateVotesInPollMessage, isJidNewsletter, makeCacheableSignalKeyStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
+import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageID, getAggregateVotesInPollMessage, isJidNewsletter, makeCacheableSignalKeyStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
 import P from 'pino'
 import qp from 'qrcode-terminal'
 const logger = P({
@@ -152,7 +152,7 @@ const startSock = async() => {
               }
 
               if (!msg.key.fromMe && doReplies && !isJidNewsletter(msg.key?.remoteJid!)) {
-              	const id = generateMessageIDV2(sock.user?.id)
+              	const id = generateMessageID()
               	logger.debug({id, orig_id: msg.key.id }, 'replying to message')
                 await sock.sendMessage(msg.key.remoteJid!, { text: 'pong '+msg.key.id }, {messageId: id })
               }
@@ -212,13 +212,7 @@ const startSock = async() => {
 				}
 			}
 
-			if(events['chats.delete']) {
-				logger.debug('chats deleted ', events['chats.delete'])
-			}
-
-			if(events['group.member-tag.update']) {
-				logger.debug('group member tag update', JSON.stringify(events['group.member-tag.update'], undefined, 2))
-			}
+			
 		}
 	)
 

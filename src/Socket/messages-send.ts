@@ -24,7 +24,7 @@ import {
 	encodeWAMessage,
 	encryptMediaRetryRequest,
 	extractDeviceJids,
-	generateMessageIDV2,
+	generateMessageID,
 	generateParticipantHashV2,
 	generateWAMessage,
 	getStatusCodeForMediaRetry,
@@ -68,7 +68,7 @@ import {
 	S_WHATSAPP_NET
 } from '../WABinary'
 import { USyncQuery, USyncUser } from '../WAUSync'
-import { makeNewsletterSocket } from './newsletter'
+import { makeGroupsSocket } from './groups.js'
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -81,7 +81,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		enableRecentMessageCache,
 		maxMsgRetryCount
 	} = config
-	const sock = makeNewsletterSocket(config)
+	const sock = makeGroupsSocket(config)
 	const {
 		ev,
 		authState,
@@ -640,7 +640,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const isGroupOrStatus = isGroup || isStatus
 		const finalJid = jid
 
-		msgId = msgId || generateMessageIDV2(meId)
+		msgId = msgId || generateMessageID()
 		useUserDevicesCache = useUserDevicesCache !== false
 		useCachedGroupMetadata = useCachedGroupMetadata !== false && !isStatus
 
@@ -1361,7 +1361,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					upload: waUploadToServer,
 					mediaCache: config.mediaCache,
 					options: config.options,
-					messageId: generateMessageIDV2(sock.user?.id),
+					messageId: generateMessageID(),
 					...options
 				})
 				const isEventMsg = 'event' in content && !!content.event
