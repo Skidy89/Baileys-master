@@ -1,27 +1,12 @@
 import { Boom } from '@hapi/boom'
 import NodeCache from '@cacheable/node-cache'
 import readline from 'readline'
-import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageID, getAggregateVotesInPollMessage, isJidNewsletter, makeCacheableSignalKeyStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
+import makeWASocket, { CacheStore, DEFAULT_CONNECTION_CONFIG, DisconnectReason, fetchLatestBaileysVersion, generateMessageID, getAggregateVotesInPollMessage, GroupMetadata, isJidNewsletter, makeCacheableSignalKeyStore, proto, useMultiFileAuthState, WAMessageContent, WAMessageKey } from '../src'
 import P from 'pino'
 import qp from 'qrcode-terminal'
 const logger = P({
-  level: "trace",
-  transport: {
-    targets: [
-      {
-        target: "pino-pretty", // pretty-print for console
-        options: { colorize: true },
-        level: "trace",
-      },
-      {
-        target: "pino/file", // raw file output
-        options: { destination: './wa-logs.txt' },
-        level: "trace",
-      },
-    ],
-  },
-})
-logger.level = 'trace'
+  level: "silent"})
+logger.level = 'silent'
 
 const doReplies = process.argv.includes('--do-reply')
 const usePairingCode = process.argv.includes('--use-pairing-code')
@@ -30,7 +15,7 @@ const usePairingCode = process.argv.includes('--use-pairing-code')
 // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
 const msgRetryCounterCache = new NodeCache() as CacheStore
 
-const onDemandMap = new Map<string, string>()
+const groupMetadata = new Map<string, GroupMetadata>()
 
 // Read line interface
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -55,6 +40,15 @@ const startSock = async() => {
 			creds: state.creds,
 			/** caching makes the store faster to send/recv messages */
 			keys: makeCacheableSignalKeyStore(state.keys, logger),
+		},
+		cachedGroupMetadata: async (jid)=> {
+			if(groupMetadata.has(jid)) {
+				return groupMetadata.get(jid)
+			}
+			const metadata = await sock.groupMetadata(jid).catch(() => null)
+			if(metadata) {
+				groupMetadata.set(jid, metadata)
+			}
 		},
 		msgRetryCounterCache,
 		generateHighQualityLinkPreview: true,
@@ -150,6 +144,12 @@ const startSock = async() => {
                 const messageId = await sock.fetchMessageHistory(50, msg.key, msg.messageTimestamp!)
                 logger.debug({ id: messageId }, 'requested on-demand history resync')
               }
+			  if (text == "testGroups") {
+				console.time('testGroups')
+				await sock.sendMessage(msg.key.remoteJid!, { text: 'pong' }, { messageId: generateMessageID() })
+				console.timeEnd('testGroups')
+
+			  }
 
               if (!msg.key.fromMe && doReplies && !isJidNewsletter(msg.key?.remoteJid!)) {
               	const id = generateMessageID()
